@@ -5,206 +5,136 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Опрос для экспатов</title>
   <style>
+    /* ===== Minimal Clean Style  v2 ===== */
+    :root{
+      --accent:#00bcd4;        /* бирюзовый акцент */
+      --accent-dark:#0097a7;   /* hover */
+      --neutral-bg:#fafafa;    /* светлый фон */
+      --card-border:#e0e0e0;   /* тонкий серый бордер */
+      --option-border:rgba(0,0,0,.25); /* полупрозрачная рамка опции */
+    }
+    *{box-sizing:border-box}
     body{
-      font-family: Arial, sans-serif;
-      margin:0; padding:0;
-      background:#f5f5f5;
-      display:flex; justify-content:center; align-items:center;
+      font-family:"Inter", Arial, sans-serif;
+      margin:0;padding:0;
+      background:var(--neutral-bg);
+      display:flex;justify-content:center;align-items:center;
       height:100vh;
     }
     #card{
-      background:#fff; max-width:500px; width:92%;
-      padding:24px 32px; border-radius:10px;
-      box-shadow:0 4px 12px rgba(0,0,0,.15);
-      text-align:center; transition:all .3s;
+      background:#fff;
+      width:92%;max-width:500px;
+      padding:32px 40px 28px;
+      border:1px solid var(--card-border);
+      border-radius:10px;
+      text-align:center;
     }
-    button{padding:10px 24px; font-size:18px; cursor:pointer; border:none; border-radius:6px; background:#007bff; color:#fff;}
-    button:hover{background:#0056b3;}
-    .opt-btn{display:block; width:100%; background:#28a745; margin:8px 0; font-size:16px;}
-    .opt-btn:hover{background:#1e7e34;}
-    .selected{background:#1e7e34 !important;}
-    .disabled{opacity:.6; pointer-events:none;}
-    input[type="text"], input[type="number"]{margin-top:10px; padding:8px; width:100%; font-size:15px; border:1px solid #ccc; border-radius:4px;}
-    .nav{display:flex; justify-content:space-between; align-items:center; margin-top:20px;}
-    .nav button{width:48%; font-size:20px; display:flex; justify-content:center; align-items:center; gap:6px;}
+    /* прогресс‑бар */
+    #progressContainer{width:100%;height:4px;background:var(--card-border);border-radius:2px;overflow:hidden;margin:-8px 0 20px;}
+    #progressBar{height:100%;width:0;background:var(--accent);transition:width .3s;}
+
+    /* опции */
+    .opt-btn{
+      display:block;
+      width:100%;
+      margin:8px 0;
+      font-size:16px;
+      color:#333;
+      background:transparent;
+      border:2px solid var(--option-border);
+      border-radius:10px;
+      padding:12px 16px;
+      cursor:pointer;
+      transition:border-color .2s,background .2s,color .2s;
+    }
+    .opt-btn:hover{border-color:var(--accent-dark);}
+    .selected{
+      background:var(--accent)!important;
+      color:#fff!important;
+      border-color:var(--accent)!important;
+    }
+
+    input[type="text"],input[type="number"]{
+      margin-top:10px;
+      padding:10px 14px;
+      width:100%;
+      font-size:15px;
+      border:2px solid var(--option-border);
+      border-radius:8px;
+    }
+
+    /* навигация */
+    .nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;gap:8px;}
+    .nav button{
+      flex:1;
+      font-size:28px;
+      background:transparent;
+      color:var(--accent);
+      border:none;
+      padding:8px 0;
+      cursor:pointer;
+      transition:color .2s;
+    }
+    .nav button:hover{color:var(--accent-dark);}
+    .disabled{opacity:.3;pointer-events:none;}
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="card">
+    <!-- прогресс‑бар -->
+    <div id="progressContainer" style="display:none;"><div id="progressBar"></div></div>
+
     <!-- приветствие -->
     <div id="welcome">
       <h1>Добро пожаловать!</h1>
       <p>Пройдите короткий опрос, чтобы мы сделали лучшую платформу для аренды жилья.</p>
-      <button id="startBtn">Начать ➡️</button>
+      <button id="startBtn">Начать&nbsp;➡️</button>
     </div>
 
-    <!-- сюда динамически подставляется вопрос -->
+    <!-- динамический контент вопросов -->
     <div id="qa" style="display:none;"></div>
 
-    <!-- финальный экран -->
+    <!-- финал -->
     <div id="thanks" style="display:none;">
       <h2>Спасибо за ответы! 🎉</h2>
       <p>Мы уже на шаг ближе к лучшему сервису.</p>
     </div>
   </div>
-
 <script>
 /********************************
  * Конфигурация вопросов        *
  ********************************/
-const questions = [
-  {text:'В какой город Вьетнама вы переехали или планируете переехать?', options:['Ханой','Хошимин','Дананг','Нячанг','Другое'], allowOther:true, type:'single'},
-  {text:'Вы уже живёте во Вьетнаме или только планируете?', options:['Уже живу','Планирую','Другое'], allowOther:true, type:'single'},
-  {text:'Как долго планируете арендовать жильё?', options:['1–3 месяца','3–6 месяцев','6–12 месяцев','Больше года','Другое'], allowOther:true, type:'single'},
-  {text:'Какой месячный бюджет на аренду?', options:['< 400 USD','400–700 USD','700–1000 USD','> 1000 USD','Другое'], allowOther:true, type:'single'},
-  {text:'Какой тип жилья вы ищете?', options:['Квартира','Дом целиком','Комната','Студия','Другое'], allowOther:true, type:'single'},
-  {text:'С какими сложностями вы сталкивались при поиске? (можно выбрать несколько)', options:['Недостоверные фото','Завышенная цена для иностранцев','Недостаток информации о квартире','Языковой барьер','Сложно найти по нужным параметрам','Другое'], allowOther:true, type:'multi', maxSelect:null},
-  {text:'Что для вас важнее всего при выборе жилья? (выберите 3 главных)', options:['Цена','Район / расположение','Качество ремонта','Меблировка','Наличие бытовой техники','Безопасность','Интернет','Вид из окна','Тишина','Инфраструктура вокруг (магазины, школы и пр.)'], allowOther:false, type:'multi', maxSelect:3},
-  {text:'Беспокоит ли вас возврат депозита?', options:['Да, очень','Немного','Нет'], allowOther:false, type:'single'},
-  {text:'Сталкивались ли вы с мошенничеством при аренде?', options:['Да','Нет','Не уверен(а)'], allowOther:false, type:'single'},
-  {text:'С какими проблемами вы столкнулись во время проживания? (можно выбрать несколько)', options:['Плесень/сырость','Проблемы с водой','Перебои с электричеством','Медленный интернет','Шум','Насекомые','Плохая реакция хозяина на просьбы','Другое'], allowOther:true, type:'multi', maxSelect:null},
-  {text:'Насколько для вас важна близость к работе? (1 — не важна, 5 — очень важна)', options:['1','2','3','4','5'], allowOther:false, type:'single'},
-  {text:'Насколько для вас важна близость к международным школам? (1 — не важна, 5 — очень важна)', options:['1','2','3','4','5'], allowOther:false, type:'single'},
-  {text:'Насколько для вас важна близость к кафе/магазинам/супермаркетам? (1 — не важна, 5 — очень важна)', options:['1','2','3','4','5'], allowOther:false, type:'single'},
-  {text:'Насколько для вас важна близость к паркам/зонам отдыха? (1 — не важна, 5 — очень важна)', options:['1','2','3','4','5'], allowOther:false, type:'single'},
-  {text:'Насколько легко вам было общаться с арендодателями?', options:['Очень легко','Скорее легко','Скорее сложно','Очень сложно'], allowOther:false, type:'single'},
-  {text:'Какие проблемы возникали в коммуникации? (можно выбрать несколько)', options:['Язык','Разные ожидания','Медленные ответы','Другое'], allowOther:true, type:'multi', maxSelect:null},
-  {text:'Какую сумму вы готовы платить в месяц за долгосрочную аренду?', options:['до 300 USD','300–500 USD','500–800 USD','800–1200 USD','более 1200 USD'], allowOther:false, type:'single'}
+const questions=[
+  {text:'В какой город Вьетнама вы переехали или планируете переехать?',options:['Ханой','Хошимин','Дананг','Нячанг','Другое'],allowOther:true,type:'single'},
+  {text:'Вы уже живёте во Вьетнаме или только планируете?',options:['Уже живу','Планирую','Другое'],allowOther:true,type:'single'},
+  {text:'Как долго планируете арендовать жильё?',options:['1–3 месяца','3–6 месяцев','6–12 месяцев','Больше года','Другое'],allowOther:true,type:'single'},
+  {text:'Какой месячный бюджет на аренду?',options:['< 400 USD','400–700 USD','700–1000 USD','> 1000 USD','Другое'],allowOther:true,type:'single'},
+  {text:'Какой тип жилья вы ищете?',options:['Квартира','Дом целиком','Комната','Студия','Другое'],allowOther:true,type:'single'},
+  {text:'С какими сложностями вы сталкивались при поиске? (можно выбрать несколько)',options:['Недостоверные фото','Завышенная цена для иностранцев','Недостаток информации о квартире','Языковой барьер','Сложно найти по нужным параметрам','Другое'],allowOther:true,type:'multi',maxSelect:null},
+  {text:'Что для вас важнее всего при выборе жилья? (выберите 3 главных)',options:['Цена','Район / расположение','Качество ремонта','Меблировка','Наличие бытовой техники','Безопасность','Интернет','Вид из окна','Тишина','Инфраструктура вокруг (магазины, школы и пр.)'],allowOther:false,type:'multi',maxSelect:3},
+  {text:'Беспокоит ли вас возврат депозита?',options:['Да, очень','Немного','Нет'],allowOther:false,type:'single'},
+  {text:'Сталкивались ли вы с мошенничеством при аренде?',options:['Да','Нет','Не уверен(а)'],allowOther:false,type:'single'},
+  {text:'С какими проблемами вы столкнулись во время проживания? (можно выбрать несколько)',options:['Плесень/сырость','Проблемы с водой','Перебои с электричеством','Медленный интернет','Шум','Насекомые','Плохая реакция хозяина на просьбы','Другое'],allowOther:true,type:'multi',maxSelect:null},
+  {text:'Насколько для вас важна близость к работе? (1 — не важна, 5 — очень важна)',options:['1','2','3','4','5'],allowOther:false,type:'single'},
+  {text:'Насколько для вас важна близость к международным школам? (1 — не важна, 5 — очень важна)',options:['1','2','3','4','5'],allowOther:false,type:'single'},
+  {text:'Насколько для вас важна близость к кафе/магазинам/супермаркетам? (1 — не важна, 5 — очень важна)',options:['1','2','3','4','5'],allowOther:false,type:'single'},
+  {text:'Насколько для вас важна близость к паркам/зонам отдыха? (1 — не важна, 5 — очень важна)',options:['1','2','3','4','5'],allowOther:false,type:'single'},
+  {text:'Насколько легко вам было общаться с арендодателями?',options:['Очень легко','Скорее легко','Скорее сложно','Очень сложно'],allowOther:false,type:'single'},
+  {text:'Какие проблемы возникали в коммуникации? (можно выбрать несколько)',options:['Язык','Разные ожидания','Медленные ответы','Другое'],allowOther:true,type:'multi',maxSelect:null},
+  {text:'Какую сумму вы готовы платить в месяц за долгосрочную аренду?',options:['до 300 USD','300–500 USD','500–800 USD','800–1200 USD','более 1200 USD'],allowOther:false,type:'single'}
 ];
-
 /********************************
  * Состояние опроса             *
  ********************************/
-let current = 0;
-const answers = [];
+let current=0;
+const answers=[];
+const welcomeEl=document.getElementById('welcome');
+const qaEl=document.getElementById('qa');
+const thanksEl=document.getElementById('thanks');
+const progressContainer=document.getElementById('progressContainer');
+const progressBar=document.getElementById('progressBar');
 
-const welcomeEl = document.getElementById('welcome');
-const qaEl      = document.getElementById('qa');
-const thanksEl  = document.getElementById('thanks');
+// запуск
 
-// запуск опроса
-document.getElementById('startBtn').addEventListener('click',() => {
-  welcomeEl.style.display='none';
-  qaEl.style.display='block';
-  renderQuestion();
-});
-
-/********************************
- * Отрисовка текущего вопроса   *
- ********************************/
-function renderQuestion(){
-  const q = questions[current];
-  qaEl.innerHTML = `<h2>${q.text}</h2>`;
-
-  const optsDiv = document.createElement('div');
-  qaEl.appendChild(optsDiv);
-
-  let selectedChoice = null;
-  const selectedSet = new Set();
-  let otherInput = null;
-
-  // создаём кнопки вариантов
-  q.options.forEach(opt=>{
-    const btn = document.createElement('button');
-    btn.className='opt-btn';
-    btn.textContent=opt;
-    optsDiv.appendChild(btn);
-
-    btn.onclick = ()=>{
-      if(opt==='Другое'){
-        if(otherInput){
-          btn.style.display='none';
-          otherInput.style.display='block';
-          otherInput.focus();
-        }
-        return;
-      }
-      if(q.type==='single'){
-        // снять предыдущее выделение
-        optsDiv.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
-        selectedChoice = opt;
-        btn.classList.add('selected');
-      }else{ // multi
-        if(selectedSet.has(opt)){
-          selectedSet.delete(opt);
-          btn.classList.remove('selected');
-        }else{
-          if(q.maxSelect && selectedSet.size>=q.maxSelect) return;
-          selectedSet.add(opt);
-          btn.classList.add('selected');
-        }
-      }
-      updateNavState();
-    };
-  });
-
-  // поле для "Другое"
-  if(q.allowOther){
-    otherInput = document.createElement('input');
-    otherInput.type='text';
-    otherInput.placeholder='Укажите свой вариант';
-    otherInput.style.display='none';
-    qaEl.appendChild(otherInput);
-    otherInput.addEventListener('input',()=>{
-      if(q.type==='single'){
-        selectedChoice = otherInput.value.trim()? otherInput.value.trim():null;
-      }
-      updateNavState();
-    });
-  }
-
-  // навигация
-  const nav = document.createElement('div');
-  nav.className='nav';
-  qaEl.appendChild(nav);
-
-  const backBtn = document.createElement('button');
-  backBtn.innerHTML='⬅️ Назад';
-  if(current===0) backBtn.classList.add('disabled');
-  backBtn.onclick = ()=>{
-    if(current===0) return;
-    current--;
-    answers.pop();
-    renderQuestion();
-  };
-  nav.appendChild(backBtn);
-
-  const nextBtn = document.createElement('button');
-  nextBtn.innerHTML='Далее ➡️';
-  nextBtn.classList.add('disabled');
-  nav.appendChild(nextBtn);
-
-  nextBtn.onclick = ()=>{
-    if(nextBtn.classList.contains('disabled')) return;
-    let answerValue;
-    if(q.type==='single'){
-      answerValue = selectedChoice;
-    }else{
-      answerValue = Array.from(selectedSet);
-      if(otherInput && otherInput.value.trim()) answerValue.push(otherInput.value.trim());
-    }
-    answers.push({question:q.text, answer:answerValue});
-    current++;
-    if(current<questions.length){
-      renderQuestion();
-    }else{
-      qaEl.style.display='none';
-      thanksEl.style.display='block';
-      console.log('Ответы пользователя:',answers);
-    }
-  };
-
-  function updateNavState(){
-    let canProceed = false;
-    if(q.type==='single'){
-      canProceed = !!selectedChoice;
-    }else{
-      canProceed = selectedSet.size>0 || (otherInput && otherInput.value.trim());
-    }
-    nextBtn.classList.toggle('disabled',!canProceed);
-  }
-}
-</script>
-</body>
-</html>
 

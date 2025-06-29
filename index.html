@@ -160,7 +160,7 @@ function renderQuestion(){
   qaEl.appendChild(nav);
 
   const backBtn = document.createElement('button');
-  backBtn.innerHTML='⬅️';
+  backBtn.innerHTML='<';
   if(current===0) backBtn.classList.add('disabled');
   backBtn.onclick = ()=>{
     if(current===0) return;
@@ -171,7 +171,7 @@ function renderQuestion(){
   nav.appendChild(backBtn);
 
   const nextBtn = document.createElement('button');
-  nextBtn.innerHTML='➡️';
+  nextBtn.innerHTML='>';
   nextBtn.classList.add('disabled');
   nav.appendChild(nextBtn);
 

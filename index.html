@@ -2,129 +2,154 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Опрос для экспатов</title>
   <style>
-    body {
+    body{
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      margin:0; padding:0;
+      background:#f5f5f5;
+      display:flex; justify-content:center; align-items:center;
+      height:100vh;
     }
-    #container {
-      background: white;
-      padding: 20px 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      text-align: center;
-      max-width: 400px;
-      transition: all 0.3s ease;
+    #card{
+      background:#fff; max-width:420px; width:90%;
+      padding:24px 32px; border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,.15);
+      text-align:center;
+      transition:all .3s;
     }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-      background-color: #007bff;
-      color: white;
+    button{
+      margin-top:16px; padding:10px 24px;
+      font-size:16px; cursor:pointer;
+      border:none; border-radius:6px;
+      background:#007bff; color:#fff;
     }
-    button:hover {
-      background-color: #0056b3;
+    button:hover{background:#0056b3;}
+    .opt-btn{
+      display:block; width:100%;
+      background:#28a745; margin:8px 0;
     }
-    .answer-btn {
-      display: block;
-      margin: 10px auto;
-      width: 80%;
-      background-color: #28a745;
-    }
-    .answer-btn:hover {
-      background-color: #1e7e34;
-    }
-    input[type="text"] {
-      margin-top: 10px;
-      padding: 8px;
-      width: 80%;
-      font-size: 14px;
+    .opt-btn:hover{background:#1e7e34;}
+    input[type="text"]{
+      margin-top:10px; padding:8px; width:100%;
+      font-size:15px; border:1px solid #ccc; border-radius:4px;
     }
   </style>
 </head>
 <body>
-  <div id="container">
+  <div id="card">
+    <!-- приветствие -->
     <div id="welcome">
       <h1>Добро пожаловать!</h1>
-      <p>Пройдите короткий опрос, чтобы помочь нам понять ваши потребности.</p>
+      <p>Пройдите короткий опрос, чтобы мы сделали лучшую платформу для аренды жилья.</p>
       <button id="startBtn">Начать</button>
     </div>
 
-    <div id="question1" style="display:none;">
-      <h2>В какой город Вьетнама вы переехали или планируете переехать?</h2>
-      <button class="answer-btn">Ханой</button>
-      <button class="answer-btn">Хошимин</button>
-      <button class="answer-btn">Дананг</button>
-      <button class="answer-btn">Нячанг</button>
-      <button class="answer-btn">Другой</button>
-      <input type="text" id="otherCity" placeholder="Укажите город" style="display:none"/>
-    </div>
+    <!-- сюда динамически подставляется вопрос -->
+    <div id="qa" style="display:none;"></div>
 
-    <div id="question2" style="display:none;">
-      <h2>Вы уже живёте во Вьетнаме или только планируете?</h2>
-      <button class="answer-btn">Уже живу</button>
-      <button class="answer-btn">Планирую</button>
-      <button class="answer-btn">Другое</button>
-      <input type="text" id="otherStatus" placeholder="Укажите вариант" style="display:none"/>
+    <!-- финальный экран -->
+    <div id="thanks" style="display:none;">
+      <h2>Спасибо за ответы! 🎉</h2>
+      <p>Мы уже на шаг ближе к лучшему сервису.</p>
     </div>
   </div>
 
-  <script>
-    const startBtn = document.getElementById('startBtn');
-    const welcome = document.getElementById('welcome');
-    const question1 = document.getElementById('question1');
-    const question2 = document.getElementById('question2');
+<script>
+/* ---------- конфигурация вопросов ---------- */
+const questions = [
+  {
+    text:'В какой город Вьетнама вы переехали или планируете переехать?',
+    options:['Ханой','Хошимин','Дананг','Нячанг','Другое'],
+    allowOther:true
+  },
+  {
+    text:'Вы уже живёте во Вьетнаме или только планируете?',
+    options:['Уже живу','Планирую','Другое'],
+    allowOther:true
+  },
+  {
+    text:'Как долго планируете арендовать жильё?',
+    options:['1–3 месяца','3–6 месяцев','6–12 месяцев','Больше года','Другое'],
+    allowOther:true
+  },
+  {
+    text:'Какой месячный бюджет на аренду?',
+    options:['< 400 USD','400–700 USD','700–1000 USD','> 1000 USD','Другое'],
+    allowOther:true
+  },
+  {
+    text:'Какой тип жилья вы ищете?',
+    options:['Квартира','Дом целиком','Комната','Студия','Другое'],
+    allowOther:true
+  }
+];
+/* ---------- состояние опроса ---------- */
+let current = 0;
+const answers = [];
 
-    const otherCityInput = document.getElementById('otherCity');
-    const otherStatusInput = document.getElementById('otherStatus');
+const welcomeEl = document.getElementById('welcome');
+const qaEl      = document.getElementById('qa');
+const thanksEl  = document.getElementById('thanks');
+const card      = document.getElementById('card');
+document.getElementById('startBtn').addEventListener('click',() => {
+  welcomeEl.style.display='none';
+  qaEl.style.display='block';
+  renderQuestion();
+});
 
-    // нажали начать
-    startBtn.addEventListener('click', () => {
-      welcome.style.display = 'none';
-      question1.style.display = 'block';
+/* ---------- отрисовка вопроса ---------- */
+function renderQuestion(){
+  const q = questions[current];
+  qaEl.innerHTML = `<h2>${q.text}</h2>`;
+  q.options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className='opt-btn';
+    btn.textContent=opt;
+    btn.onclick=()=>handleChoice(opt);
+    qaEl.appendChild(btn);
+  });
+  if(q.allowOther){
+    const otherInput = document.createElement('input');
+    otherInput.type='text';
+    otherInput.placeholder='Укажите свой вариант';
+    otherInput.style.display='none';
+    qaEl.appendChild(otherInput);
+
+    // кнопка "Другое" превращает input в видимый
+    qaEl.querySelectorAll('.opt-btn').forEach(b=>{
+      if(b.textContent==='Другое'){
+        b.onclick=()=>{
+          otherInput.style.display='block';
+          otherInput.focus();
+          b.style.display='none';
+        };
+      }
     });
 
-    // обработка первого вопроса
-    const q1buttons = question1.querySelectorAll('.answer-btn');
-    q1buttons.forEach(button => {
-      button.addEventListener('click', () => {
-        if (button.textContent === 'Другой') {
-          otherCityInput.style.display = 'block';
-        } else {
-          showSecondQuestion();
-        }
-      });
+    // обработка Enter в поле "Другое"
+    otherInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter' && otherInput.value.trim()){
+        handleChoice(otherInput.value.trim());
+      }
     });
+  }
+}
 
-    // обработка второго вопроса
-    function showSecondQuestion() {
-      question1.style.display = 'none';
-      question2.style.display = 'block';
-    }
-
-    const q2buttons = question2.querySelectorAll('.answer-btn');
-    q2buttons.forEach(button => {
-      button.addEventListener('click', () => {
-        if (button.textContent === 'Другое') {
-          otherStatusInput.style.display = 'block';
-        } else {
-          alert(`Спасибо за ответы!`);
-          // здесь можно добавить следующий вопрос
-        }
-      });
-    });
-  </script>
+/* ---------- обработка ответа ---------- */
+function handleChoice(value){
+  answers.push({question:questions[current].text,answer:value});
+  current++;
+  if(current<questions.length){
+    renderQuestion();
+  }else{
+    qaEl.style.display='none';
+    thanksEl.style.display='block';
+    console.log('Ответы пользователя:',answers); // временно выводим в консоль
+    // здесь можно отправить данные на сервер, в Google Sheets и т.д.
+  }
+}
+</script>
 </body>
 </html>

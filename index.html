@@ -208,9 +208,33 @@ function collectAnswer(){
   answers[idx]={question:q.text,answer:selected};
 }
 
-function finish(){
+/* ---------- ОТПРАВКА В GOOGLE SHEETS ---------- */
+async function sendAnswers() {
+  try {
+    await fetch(
+      'https://script.google.com/macros/s/AKfycb_______________/exec', // ← свой URL
+      {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(answers)
+      }
+    );
+  } catch (err) {
+    console.error('Ошибка отправки', err);
+  }
+}
+  function finish(){
   qa.style.display='none';navWrap.style.display='none';thanks.style.display='block';progress.style.width='100%';
   console.log('ANSWERS',answers);
+    function finish() {
+  qa.style.display = 'none';
+  navWrap.style.display = 'none';
+  thanks.style.display = 'block';
+  progress.style.width = '100%';
+
+  sendAnswers();               // ← эта строка отправит данные
+}
 }
 </script>
 </body>

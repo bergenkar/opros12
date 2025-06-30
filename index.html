@@ -72,7 +72,13 @@
 
     @media(max-width:500px){
       .options-grid{gap:16px 24px;}
-      #nav{gap:120px;}
+      #nav{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:80px;           /* расстояние между стрелками, подбирай под вкус */
+  margin-top:48px;    /* отступ вниз от вариантов */
+}
     }
   </style>
 </head>

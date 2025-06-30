@@ -194,38 +194,54 @@ nextBtn.onclick=()=>{
   idx++; if(idx<questions.length){render();}else{finish();}
 };
 /* кнопка назад */
-prevBtn.onclick=()=>{if(idx>0){idx--;render();}}
+prevBtn.onclick = () => {
+  if (idx > 0) {
+    idx--;
+    render();
+  }
+};
 
-function collectAnswer(){
-  const q=questions[idx];
-  const grid=qa.querySelector('.options-grid');
-  const selected=[...grid.children].filter(btn=>btn.classList.contains('selected')).map(b=>b.textContent);
-  const input=qa.querySelector('.other-input');
-  if(input&&input.style.display!=='none'&&input.value.trim()) selected.push(input.value.trim());
-  answers[idx]={question:q.text,answer:selected};
+function collectAnswer() {
+  const q = questions[idx];
+  const grid = qa.querySelector('.options-grid');
+  const selected = [...grid.children]
+      .filter(btn => btn.classList.contains('selected'))
+      .map(b => b.textContent);
+
+  const input = qa.querySelector('.other-input');
+  if (input && input.style.display !== 'none' && input.value.trim()) {
+    selected.push(input.value.trim());
+  }
+
+  answers[idx] = { question: q.text, answer: selected };
 }
 
-function finish(){
-  qa.style.display='none';navWrap.style.display='none';thanks.style.display='block';progress.style.width='100%';
-  console.log('ANSWERS',answers);
-  async function sendAnswers() {
+/* ---------- ОТПРАВКА В GOOGLE SHEETS ---------- */
+async function sendAnswers() {
   try {
-    await fetch('https://script.google.com/macros/s/AKfycbzJFtzEp7PFgHFMKngixeFzJTpt4UtKpDeYn5ca3LSRoJowIzOF5nBiX8hS8bIrr_ph/exec', {
-      method: 'POST',
-      mode: 'no-cors',                 // важно! чтобы не споткнуться о CORS
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(answers)
-    });
+    await fetch(
+      'https://script.google.com/macros/s/AKfycbzJFtzEp7PFgHFMKngixeFzJTpt4UtKpDeYn5ca3LSRoJowIzOF5nBiX8hS8bIrr_ph/exec',
+      {
+        method: 'POST',
+        mode: 'no-cors',                   // CORS не нужен
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(answers)
+      }
+    );
   } catch (err) {
     console.error('Ошибка отправки', err);
   }
 }
 
-// вызываем после последнего вопроса
-thanksEl.style.display = 'block';
-sendAnswers();
+/* ---------- ФИНИШ ---------- */
+function finish() {
+  qa.style.display = 'none';
+  navWrap.style.display = 'none';
+  thanks.style.display = 'block';       // у тебя элемент называется "thanks"
+  progress.style.width = '100%';
+
+  console.log('ANSWERS', answers);      // временный вывод
+  sendAnswers();                        // отправляем!
 }
-</script>
-</body>
-</html>
+
 
